@@ -126,17 +126,13 @@ function modelCrossValidation(
         push!(fold_results, metrics)
 
         # Report metrics if needed
-        if verbose
-            @printf("Fold %d - Train - Loss: %.4f, Metric: %.4f\n", 
-                k, rep,
-                metrics[:training][:loss], 
-                metrics[:training][metric])
-            
+        if verbose            
             if !isempty(k_test_inputs)
-                @printf("Fold %d - Test - Loss: %.4f, Metric: %.4f\n", 
-                    k, rep,
-                    metrics[:test][:loss], 
-                    metrics[:test][metric])
+                @printf("Fold %d - Test Metric: %.4f - Train Metric: %.4f\n", 
+                    k, metrics[:test][metric], metrics[:training][metric])
+            else
+                @printf("Fold %d - Train - Metric: %.4f\n", 
+                    k, metrics[:training][metric])
             end
         end
 
