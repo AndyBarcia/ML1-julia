@@ -7,7 +7,7 @@ module ML1julia
             confusionMatrix, printConfusionMatrix, accuracy, oneHotEncoding, normalize, 
             compute_μσ, dataset_to_matrix, value_counts, plot_value_counts, count_nulls, 
             plot_null_counts, plot_heatmap, createScikitLearnModel, modelCrossValidation,
-            trainClassEnsemble, printMetrics
+            trainClassEnsemble, printMetrics, plot_boxplots
 
     include("utils/holdOut.jl")
     include("utils/metrics.jl")
