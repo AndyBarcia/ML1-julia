@@ -76,7 +76,7 @@ function modelCrossValidation(
         delete!(modelHyperparameters, :topology)
 
         return return trainClassANN(
-            modelHyperparameters[:topology],
+            topology,
             (train_inputs, train_targets),
             crossValidationIndices;
             verbose=verbose,
