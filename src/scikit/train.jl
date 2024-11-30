@@ -110,7 +110,14 @@ function modelCrossValidation(
         model = createScikitLearnModel(modelType, modelHyperparameters)
 
         # Train model on the train set for this fold
-        fit!(model, k_train_inputs, k_train_targets)
+        if modelType == :SVM
+            # SVM specifically wants label encoded data for 
+            # training instead of oneHotEncoded data.
+            k_train_targets_labels = labelEncoding(k_train_targets)
+            fit!(model, k_train_inputs, k_train_targets_labels)
+        else
+            fit!(model, k_train_inputs, k_train_targets)
+        end
 
         # Test the model on both sets for keeping of metrics.
         metrics = Dict()
