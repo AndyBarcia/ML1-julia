@@ -72,6 +72,7 @@ function modelCrossValidation(
     # directly instead of performing the k-fold cross-validation manually.
     if modelType == :ANN 
         # Train ANN model with our own training function with Flux
+        modelHyperparameters = deepcopy(modelHyperparameters)
         topology = modelHyperparameters[:topology]
         delete!(modelHyperparameters, :topology)
 
