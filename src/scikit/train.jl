@@ -26,7 +26,14 @@ function confusionMatrix(
 )
     # Compute model predictions
     predictions = predict(model, inputs)
-    
+
+    # If the outputs of the model are label encoded, change them
+    # to one-hot encoded labels.
+    if ndims(predictions) == 1
+        n_classes = size(targets, 2)
+        predictions = oneHotEncoding(predictions, 1:n_classes)
+    end
+
     # Compute confusion matrix
     conf_matrix = confusionMatrix(
         predictions, 
@@ -56,7 +63,7 @@ function createScikitLearnModel(
     modelType::Symbol,
     modelHyperparameters::Dict,
 )
-    if modelType == :MLP
+    if modelType == :MLP || modelType == :ANN
         params = Dict{Symbol, Any}()
         params[:early_stopping] = true
         if haskey(modelHyperparameters, :topology)

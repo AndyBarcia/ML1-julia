@@ -44,6 +44,41 @@ other.
 """
 oneHotEncoding(data::AbstractArray{<:Any,1}) = oneHotEncoding(data, unique(data))
 
+"""
+Convert a one-hot encoded 2D array back into its original categorical labels.
+
+This function reverses one-hot encoding by identifying the index of the maximum 
+value in each row of the input matrix. It assumes that each row represents an 
+observation and each column represents a class.
+
+# Arguments
+- `targets::AbstractArray{Bool,2}`: A 2D boolean array where each row is a 
+    one-hot encoded representation of a categorical label.
+
+# Returns
+- `::AbstractVector{Int}`: A vector of integer indices corresponding to the 
+    original labels for each row of the input matrix.
+"""
+function labelEncoding(targets::AbstractArray{Bool,2})
+    return vec([idx[2] for idx in argmax(targets, dims=2)])
+end;
+
+"""
+Convert a boolean array of single-class labels back into their original 
+representation.
+
+# Arguments
+- `targets::AbstractArray{Bool,1}`: A 1D boolean array representing single-class 
+    labels.
+
+# Returns
+- `::AbstractVector{Bool}`: A vector of boolean values that directly correspond 
+    to the original labels.
+"""
+function labelEncoding(targets::AbstractArray{Bool,1})
+    return vec(targets)
+end;
+
 @testset "OneHotEncoding" begin
     # Test Simple example
     data = ["cat", "dog", "bird", "cat", "dog"]
