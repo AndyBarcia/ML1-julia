@@ -10,7 +10,8 @@ function trainClassEnsemble(
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}},
     crossValidationIndices::Array{Int64,1};
     verbose::Bool=false,
-    metric::Symbol=:f1Score
+    metric::Symbol=:f1Score,
+    numJobs::Int64=1
 )
 
     (train_inputs, train_targets) = trainingDataset
@@ -55,7 +56,7 @@ function trainClassEnsemble(
         # Initialize VotingClassifier with base models
         ensemble_model = VotingClassifier(
             estimators=deepcopy(base_models),
-            n_jobs=-1,
+            n_jobs=numJobs,
             voting="hard"
         )
 
@@ -224,7 +225,8 @@ end
         [:kNN],
         [knn_hyperparameters],
         (train_input, train_output),
-        crossvalidation_indices
+        crossvalidation_indices,
+        numJobs=1
     )
 
     @test metrics[:test][:accuracy][:mean] > 0.6
