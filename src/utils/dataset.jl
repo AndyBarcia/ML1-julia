@@ -154,6 +154,91 @@ function plot_boxplots(df::DataFrame; kwargs...)
     return p
 end
 
+"""
+    scatterplot_dataset(x, y; col_x1=1, col_x2=2, colors, target_names=nothing)
+
+Generates a scatter plot of a dataset with two selected columns of features, where each point 
+is colored by its class. The method supports binary and multi-class datasets.
+
+### Arguments:
+- `x::AbstractMatrix{T}`: A 2D matrix (or any type of 2D array) representing the feature matrix 
+    of the dataset, where each row is a data point and each column is a feature.
+- `y::AbstractMatrix{T}`: A 2D matrix (or any type of 2D array) representing the labels of the 
+    dataset, where each row corresponds to a data point and each column corresponds to the binary indicator for the class (one-hot encoding format).
+- `col_x1::Int=1`: The index of the first feature to plot on the x-axis (default is `1`).
+- `col_x2::Int=2`: The index of the second feature to plot on the y-axis (default is `2`).
+- `colors::Vector{ColorTypes.Color}`: A vector containing the colors to be used for each class. 
+    It should have the same length as the number of unique classes.
+- `target_names::Vector{String}=nothing`: An optional vector of strings representing the class 
+    labels. If provided, it must have the same length as the number of unique classes.
+"""
+function scatterplot_dataset(x, y; col_x1=1, col_x2=2, colors, target_names=nothing)
+    num_classes = length(unique(colors))
+
+    if !isnothing(target_names)
+        @assert num_classes == length(target_names)
+        label = target_names
+    else
+        label = [string(i) for i in 1:num_classes]
+    end
+
+    fig = plot()
+    if (num_classes == 2)
+        possitive_class = y[:,1].==1
+        scatter!(fig, x[possitive_class,col_x1], x[possitive_class,col_x2], markercolor=colors[1], label=label[1])
+        scatter!(fig, x[.!possitive_class,col_x1], x[.!possitive_class,col_x2], makercolor=colors[2], label=label[2])
+    else
+        for i in 1:num_classes
+            index_class = y[:,i].==1
+            scatter!(fig, x[index_class, col_x1], x[index_class, col_x2], markercolor=colors[i], label=label[i])
+        end
+    end
+end
+
+"""
+Plots a histogram of a variable with a scaled PD (Probability of Default) rate overlay.
+
+# Arguments
+- df::DataFrame: The dataset containing the variables.
+- target_var::Symbol: The target variable (e.g., :Default).
+- study_var::Symbol: The variable to study (e.g., :LIMIT_BAL).
+- n_bins::Int: The number of bins for the histogram (default is 30).
+
+# Returns
+- A plot with the histogram and scaled PD rate.
+"""
+function plot_histogram_with_pd_rate(df::DataFrame, target_var::Symbol, study_var::Symbol; n_bins::Int = 30)
+    # Calculate bin edges and centers
+    bin_edges = range(minimum(df[!, study_var]), stop=maximum(df[!, study_var]), length=n_bins + 1)
+    bin_centers = [0.5 * (bin_edges[i] + bin_edges[i+1]) for i in 1:n_bins]
+
+    # Initialize vectors for mean PD rate and frequencies
+    mean_default_per_bin = Vector{Float64}(undef, n_bins)
+    frequencies = Vector{Int}(undef, n_bins)
+
+    # Calculate mean PD rate and frequencies for each bin
+    for i in 1:n_bins
+        lower = bin_edges[i]
+        upper = bin_edges[i+1]
+        values_in_bin = df[(df[!, study_var] .>= lower) .& (df[!, study_var] .< upper), :]
+
+        frequencies[i] = nrow(values_in_bin)
+
+        if !isempty(values_in_bin)
+            mean_default_per_bin[i] = mean(values_in_bin[!, target_var]) * frequencies[i]  # Scale by frequency
+        else
+            mean_default_per_bin[i] = NaN
+        end
+    end
+
+    # Plot the histogram using the data column, not the symbol
+    @df df histogram(df[!, study_var], bins=n_bins, title="Distribución de $study_var con PD Rate", 
+                     xlabel=string(study_var), ylabel="Frecuencia", legend=false)
+
+    # Overlay the PD rate line
+    plot!(bin_centers, mean_default_per_bin, lw=2, label="PD Rate (escala ajustada)", color=:red)
+end
+
 @testset "dataset_to_matrix" begin
     # Dummy dataframe
     df = DataFrame(
