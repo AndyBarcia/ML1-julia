@@ -74,7 +74,7 @@ function modelCrossValidation(
         # Train ANN model with our own training function with Flux
         return return trainClassANN(
             modelHyperparameters[:topology],
-            (train_inputs, encoded_targets),
+            (train_inputs, train_targets),
             crossValidationIndices;
             maxEpochs=modelHyperparameters[:maxEpochs],
             minLoss=modelHyperparameters[:minLoss],
