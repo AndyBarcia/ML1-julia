@@ -239,6 +239,63 @@ function plot_histogram_with_pd_rate(df::DataFrame, target_var::Symbol, study_va
     plot!(bin_centers, mean_default_per_bin, lw=2, label="PD Rate (escala ajustada)", color=:red)
 end
 
+"""
+Balance the class proportions in a dataset by selectively removing samples from the 
+ majority class.
+
+# Arguments
+- `input`: The input feature matrix
+- `output`: The output/label matrix
+- `positive_target_proportion`: Desired proportion of positive class samples (default: 0.4)
+- `negative_target_proportion`: Desired proportion of negative class samples (default: 0.6)
+```
+"""
+function sample_balance_classes(
+    input::AbstractArray{<:Any,2}, 
+    output::AbstractArray{<:Any,2};
+    positive_target_proportion::Float64, 
+)
+    negative_target_proportion = 1.0 - positive_target_proportion
+
+    # Find indices of positive and negative samples
+    positive_idxs = findall(vec(output[:, 1]) .== 1)
+    negative_idxs = findall(vec(output[:, 1]) .== 0)
+
+    # Calculate current class sizes and proportions
+    num_positive_samples = length(positive_idxs)
+    num_negative_samples = length(negative_idxs)
+
+    positive_proportion = num_positive_samples / size(output, 1)
+    negative_proportion = num_negative_samples / size(output, 1)
+
+    # Adjust samples based on target proportions
+    if positive_target_proportion > positive_proportion
+        # Need to drop negative class samples
+        negative_target_samples = round(Int, num_positive_samples / positive_target_proportion - num_positive_samples)
+        negative_target_to_drop = num_negative_samples - negative_target_samples
+
+        drop_idxs = shuffle(negative_idxs)[1:negative_target_to_drop]
+        negative_idxs = setdiff(negative_idxs, drop_idxs)
+    elseif negative_target_proportion > negative_proportion
+        # Need to drop positive class samples
+        positive_target_samples = round(Int, num_negative_samples / negative_target_proportion - num_negative_samples)
+        positive_target_to_drop = num_positive_samples - positive_target_samples
+
+        drop_idxs = shuffle(positive_idxs)[1:positive_target_to_drop]
+        positive_idxs = setdiff(positive_idxs, drop_idxs)
+    else
+        # The dataset is already balanced
+        return input, output
+    end
+    
+    # Combine and sort the remaining indices
+    resampled_idxs = vcat(positive_idxs, negative_idxs)
+    resampled_input = input[resampled_idxs, :]
+    resampled_output = output[resampled_idxs, :]
+
+    return resampled_input, resampled_output
+end
+
 @testset "dataset_to_matrix" begin
     # Dummy dataframe
     df = DataFrame(
