@@ -244,56 +244,28 @@ Balance the class proportions in a dataset by selectively removing samples from 
  majority class.
 
 # Arguments
-- `input`: The input feature matrix
-- `output`: The output/label matrix
-- `positive_target_proportion`: Desired proportion of positive class samples (default: 0.4)
-- `negative_target_proportion`: Desired proportion of negative class samples (default: 0.6)
+- `df`: The input feature matrix
+- `class_col`: The column whose proportion will be adjusted.
+- `target_ratio`: The proportion of samples of the class_col column that will be 0. 
 ```
 """
-function sample_balance_classes(
-    input::AbstractArray{<:Any,2}, 
-    output::AbstractArray{<:Any,2};
-    positive_target_proportion::Float64, 
-)
-    negative_target_proportion = 1.0 - positive_target_proportion
-
-    # Find indices of positive and negative samples
-    positive_idxs = findall(vec(output[:, 1]) .== 1)
-    negative_idxs = findall(vec(output[:, 1]) .== 0)
-
-    # Calculate current class sizes and proportions
-    num_positive_samples = length(positive_idxs)
-    num_negative_samples = length(negative_idxs)
-
-    positive_proportion = num_positive_samples / size(output, 1)
-    negative_proportion = num_negative_samples / size(output, 1)
-
-    # Adjust samples based on target proportions
-    if positive_target_proportion > positive_proportion
-        # Need to drop negative class samples
-        negative_target_samples = round(Int, num_positive_samples / positive_target_proportion - num_positive_samples)
-        negative_target_to_drop = num_negative_samples - negative_target_samples
-
-        drop_idxs = shuffle(negative_idxs)[1:negative_target_to_drop]
-        negative_idxs = setdiff(negative_idxs, drop_idxs)
-    elseif negative_target_proportion > negative_proportion
-        # Need to drop positive class samples
-        positive_target_samples = round(Int, num_negative_samples / negative_target_proportion - num_negative_samples)
-        positive_target_to_drop = num_positive_samples - positive_target_samples
-
-        drop_idxs = shuffle(positive_idxs)[1:positive_target_to_drop]
-        positive_idxs = setdiff(positive_idxs, drop_idxs)
-    else
-        # The dataset is already balanced
-        return input, output
+function balance_dataset(df::DataFrame, class_col::Symbol, target_ratio::Float64)
+    if target_ratio <= 0 || target_ratio >= 1
+        error("El ratio debe estar entre 0 y 1.")
     end
-    
-    # Combine and sort the remaining indices
-    resampled_idxs = vcat(positive_idxs, negative_idxs)
-    resampled_input = input[resampled_idxs, :]
-    resampled_output = output[resampled_idxs, :]
 
-    return resampled_input, resampled_output
+    df_class1 = filter(row -> row[class_col] == 0, df)
+    df_class2 = filter(row -> row[class_col] == 1, df)
+
+    len_class2 = nrow(df_class2)
+    
+    len_class1 = round(Int, (len_class2 * target_ratio) / (1 - target_ratio))
+    
+    sampled_class1 = df_class1[shuffle(1:nrow(df_class1))[1:len_class1], :]
+    
+    final_dataset = vcat(sampled_class1, df_class2)
+    
+    return final_dataset
 end
 
 @testset "dataset_to_matrix" begin
