@@ -9,7 +9,7 @@ module ML1julia
             plot_null_counts, plot_heatmap, createScikitLearnModel, modelCrossValidation,
             trainClassEnsemble, printMetrics, plot_boxplots, scatterplot_dataset,
             plot_histogram_with_pd_rate, downsampleDataset, getModelMetrics, plotMetrics,
-            plotMetricStatistics, plotMetricsAllModels
+            plotMetricStatistics, plotMetricsAllModels, plotTimes, meanTime
 
     include("utils/holdOut.jl")
     include("utils/metrics.jl")

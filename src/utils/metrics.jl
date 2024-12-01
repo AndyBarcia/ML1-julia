@@ -1,5 +1,6 @@
 using Statistics;
 using Test;
+using Dates;
 
 """
 Calculate the accuracy of binary classification or multi-class classification with
@@ -416,6 +417,35 @@ function plotMetricsAllModels(metrics::Dict{Symbol, Dict{Symbol, Float32}})
         )
         display(p)
     end
+end;
+
+function meanTime(training_times::AbstractArray{<:Any,1})
+    return Dates.Millisecond(round(mean([Dates.value(t) for t in training_times])))
+end;
+
+function plotTimes(
+    model_name::String,
+    metric_times::AbstractArray{<:Any,1},
+)
+    bar(
+        [Dates.value(t) / 1e3 for t in metric_times],
+        title="$model_name training times Comparison", 
+        ylabel="Training time (s)", 
+        legend=false
+    )
+end;
+
+function plotTimes(
+    model_name::AbstractArray{String,1},
+    metric_times::AbstractArray{<:Any,1},
+)
+    bar(
+        model_name,
+        [Dates.value(t) / 1e3 for t in metric_times],
+        title="Training times Comparison", 
+        ylabel="Training time (s)", 
+        legend=false
+    )
 end;
 
 @testset "accuracy" begin
