@@ -331,6 +331,93 @@ function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray
     return confusionMatrix(encoded_outputs, encoded_targets; weighted=weighted)
 end;
 
+function getModelMetrics(
+    model_results, 
+    phase::Symbol=:test;
+    metric_statistic::Symbol=:mean,
+    average_results::Bool=false
+)    
+    metric_names = keys(model_results[1][:metrics][phase])
+    if average_results
+        metrics_data = Dict{Symbol,Float32}()
+    else
+        metrics_data = Dict{Symbol,Vector{Float32}}()
+    end;
+
+    for metric in metric_names
+        metric_result = Vector{Float32}()
+        for model_data in model_results
+            push!(metric_result, model_data[:metrics][phase][metric][metric_statistic])
+        end
+
+        if average_results
+            metrics_data[metric] = mean(metric_result)
+        else
+            metrics_data[metric] = metric_result
+        end
+    end
+
+    return metrics_data
+end;
+
+function plotMetrics(
+    model_name, 
+    metric_models::Dict{Symbol, Vector{Float32}},
+)
+    for (metric, values) in metric_models
+        p = bar(
+            values, 
+            title="$model_name $metric Comparison", 
+            xlabel="Index", 
+            ylabel="Value", 
+            legend=false
+        )
+        display(p)
+    end
+end;
+
+function plotMetricStatistics(
+    model_name, 
+    metrics::Dict{Symbol, Dict{Symbol, Float32}},
+)
+    for (metric, metric_statistics) in metrics
+        p = bar(
+            string.(collect(keys(metric_statistics))),
+            collect(values(metric_statistics)),
+            title="$model_name $metric Comparison", 
+            ylabel="Value", 
+            legend=false
+        )
+        display(p)
+    end
+end;
+
+function plotMetricsAllModels(metrics::Dict{Symbol, Dict{Symbol, Float32}})
+    # Get names of all metrics.
+    metric_names = keys(first(values(metrics))) |> collect
+    # Get names of all models.
+    model_names = collect(keys(metrics))
+    
+    # Loop through each metric and create a bar plot
+    for metric in metric_names
+        # Extract data for the current metric
+        values = [metrics[model][metric] for model in model_names]
+        
+        # Create a bar plot
+        p = bar(
+            string.(model_names), 
+            values, 
+            label=string(metric), 
+            title="Comparison of Models: $metric",
+            xlabel="Models",
+            ylabel=string(metric) * " Values",
+            legend=false,
+            bar_width=0.6
+        )
+        display(p)
+    end
+end;
+
 @testset "accuracy" begin
     # Test 1: 1D arrays
     outputs_1d = Bool[1, 0, 1, 1]

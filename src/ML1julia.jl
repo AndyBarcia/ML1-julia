@@ -8,7 +8,8 @@ module ML1julia
             compute_μσ, dataset_to_matrix, value_counts, plot_value_counts, count_nulls, 
             plot_null_counts, plot_heatmap, createScikitLearnModel, modelCrossValidation,
             trainClassEnsemble, printMetrics, plot_boxplots, scatterplot_dataset,
-            plot_histogram_with_pd_rate, sample_balance_classes
+            plot_histogram_with_pd_rate, balance_dataset, getModelMetrics, plotMetrics,
+            plotMetricStatistics, plotMetricsAllModels
 
     include("utils/holdOut.jl")
     include("utils/metrics.jl")
