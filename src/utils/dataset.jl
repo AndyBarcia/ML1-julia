@@ -207,10 +207,17 @@ Plots a histogram of a variable with a scaled PD (Probability of Default) rate o
 # Returns
 - A plot with the histogram and scaled PD rate.
 """
-function plot_histogram_with_pd_rate(df::DataFrame, target_var::Symbol, study_var::Symbol; n_bins::Int = 30)
+function plot_histogram_with_pd_rate(
+    df::DataFrame, 
+    target_var::Symbol, 
+    study_var::Symbol; 
+    n_bins::Int = 10,
+    xmin = minimum(df[!, study_var]),
+    xmax = maximum(df[!, study_var])
+)
     # Calculate bin edges and centers
-    bin_edges = range(minimum(df[!, study_var]), stop=maximum(df[!, study_var]), length=n_bins + 1)
-    bin_centers = [0.5 * (bin_edges[i] + bin_edges[i+1]) for i in 1:n_bins]
+    bin_edges = range(xmin, stop=xmax, length=n_bins + 1)
+    bin_centers = [0.5 * (bin_edges[i] + bin_edges[i+1] - 1) for i in 1:n_bins]
 
     # Initialize vectors for mean PD rate and frequencies
     mean_default_per_bin = Vector{Float64}(undef, n_bins)
@@ -225,18 +232,38 @@ function plot_histogram_with_pd_rate(df::DataFrame, target_var::Symbol, study_va
         frequencies[i] = nrow(values_in_bin)
 
         if !isempty(values_in_bin)
-            mean_default_per_bin[i] = mean(values_in_bin[!, target_var]) * frequencies[i]  # Scale by frequency
+            mean_default_per_bin[i] = mean(values_in_bin[!, target_var])
         else
             mean_default_per_bin[i] = NaN
         end
     end
 
     # Plot the histogram using the data column, not the symbol
-    @df df histogram(df[!, study_var], bins=n_bins, title="Distribución de $study_var con PD Rate", 
-                     xlabel=string(study_var), ylabel="Frecuencia", legend=false)
+    p1 = @df df histogram(
+        df[!, study_var], 
+        bins=bin_edges, 
+        title="Distribucion of $study_var with probability of default", 
+        xlabel=string(study_var), 
+        label="Frequency", 
+        ylabel="Frequency", 
+        legend=false
+    )
 
-    # Overlay the PD rate line
-    plot!(bin_centers, mean_default_per_bin, lw=2, label="PD Rate (escala ajustada)", color=:red)
+    # Scale the PD rate to a 0-100% range
+    pd_rate_scaled = mean_default_per_bin * 100.0
+
+    # Overlay the PD rate line with a second y-axis
+    p2 = plot!(
+        twinx(), 
+        bin_centers, 
+        pd_rate_scaled, 
+        lw=2, 
+        color=:red, 
+        legend=:topright, 
+        label="Probability of Default", 
+        ylabel="Probability of Default (%)", 
+        ylim=(0,100)
+    )    
 end
 
 """
@@ -249,7 +276,7 @@ Balance the class proportions in a dataset by selectively removing samples from 
 - `target_ratio`: The proportion of samples of the class_col column that will be 0. 
 ```
 """
-function balance_dataset(df::DataFrame, class_col::Symbol, target_ratio::Float64)
+function downsampleDataset(df::DataFrame, class_col::Symbol, target_ratio::Float64)
     if target_ratio <= 0 || target_ratio >= 1
         error("El ratio debe estar entre 0 y 1.")
     end
