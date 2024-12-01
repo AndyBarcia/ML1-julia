@@ -17,7 +17,7 @@ function trainClassEnsemble(
     (train_inputs, train_targets) = trainingDataset
 
     # Metric results (train loss, validation loss, and test loss) for each of the k folds.
-    fold_results = Vector{Dict{Symbol, Any}}()
+    fold_results = Vector{Dict{Symbol,Dict}}()
     
     # Overall best model across all folds.
     best_overall_model = nothing
@@ -66,7 +66,7 @@ function trainClassEnsemble(
         fit!(ensemble_model, k_train_inputs, k_train_targets_labels)
 
         # Test the model on both sets for keeping of metrics.
-        metrics = Dict()
+        metrics = Dict{Symbol, Dict{Symbol, Any}}()
         metrics[:training] = confusionMatrix(ensemble_model, k_train_inputs, k_train_targets)
         metrics[:test] = confusionMatrix(ensemble_model, k_test_inputs, k_test_targets)
 
@@ -97,14 +97,14 @@ function trainClassEnsemble(
     end
 
     # Initialize resume_metrics of all folds
-    resume_metrics = Dict()
+    resume_metrics = Dict{Symbol,Dict{Symbol,Dict{Symbol,Float32}}}()
     # Go through each subset (training, validation, test)
     for subset in [:training, :validation, :test]
         # Skip if no fold results for this subset
         subset_results = [fold[subset] for fold in fold_results if haskey(fold, subset)]
         if !isempty(subset_results)
             # Initialize metrics for this subset
-            resume_metrics[subset] = Dict()
+            resume_metrics[subset] = Dict{Symbol,Dict{Symbol,Float32}}()
             
             # Compute mean, max, min for each metric
             for metric in keys(subset_results[1])
