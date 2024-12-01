@@ -6,20 +6,22 @@ using StatsPlots
 
 function dataset_to_matrix(
     df::DataFrame, 
-    target_column::Symbol, 
+    target_column::Symbol;
+    drop_columns::AbstractArray{Symbol,1}=Vector{Symbol}(),
     input_type::Type=Float64
 )
     @assert(target_column in propertynames(df), "Target column doesn't exist in DataFrame.")
 
-    # Convert the input columns to a matrix of the specified type
-    input_matrix = Matrix{input_type}(df[:, Not(target_column)])
+    all_columns = propertynames(df)
+    columns_to_keep = setdiff(all_columns, [target_column; drop_columns])
+    input_matrix = Matrix{input_type}(df[:, collect(columns_to_keep)])
     
     # Extract the target column as a vector. We don't convert to
     # any type as the output can be of arbtriary type.
     output_vector = df[:, target_column]
     
     return input_matrix, output_vector
-end
+end;
 
 function value_counts(df::DataFrame, target_variable::Symbol)
     counts = combine(groupby(df, target_variable), nrow => :Count)
@@ -304,7 +306,7 @@ end
     )
 
     # Change dataframe to a 2D matrix of floats.
-    inputs, outputs = dataset_to_matrix(df,  :Salary, Float64)
+    inputs, outputs = dataset_to_matrix(df,  :Salary, input_type=Float64)
 
     @test typeof(inputs)  <: AbstractArray{Float64, 2}
     @test typeof(outputs) <: AbstractArray{Int64, 1}
